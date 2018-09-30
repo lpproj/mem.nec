@@ -4,7 +4,7 @@ REM for OpenWatcom (note the space is needed after the -f):
 REM NOTE that freecom removes trailing spaces from SET commands :-p
 REM do not forget to set the WATCOM and INCLUDE env variables,
 REM like WATCOM=c:\watcom and INCLUDE=c:\watcom\h
-set MAKE=wmake -z
+set MAKE=wmake -h -z
 set MAKE_F=-f 
 
 REM for Turbo C++ (no space needed after -f):

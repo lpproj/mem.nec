@@ -3,10 +3,10 @@
 #
 
 CC  = wcl
-CFLAGS        = -c -j -wx -ms -oahls -s
-CFLAGS_DEBUG  = -c -j -wx -ms -oahls -s -d2
-LFLAGS        = -fm -"option statics"
-LFLAGS_DEBUG  = -fm -"option statics" -"debug all"
+CFLAGS        = -zq -fr -c -j -wx -ms -oahls -s
+CFLAGS_DEBUG  = -zq -c -j -wx -ms -oahls -s -d2
+LFLAGS        = -zq -fm -"option statics"
+LFLAGS_DEBUG  = -zq -fm -"option statics" -"debug all"
 MEMSUPT       =
 OBJOUT        = -fo=
 EXEOUT        = -fe=
