@@ -38,10 +38,10 @@ memtest.exe: memtest.obj
     $(CC) $(LFLAGS) $<
 
 .c.obj:
-    $(CC) $(CFLAGS) $<
+    $(CC) $(CFLAGS) $(EXTRA_CFLAGS) $<
 
 .asm.obj:
-    nasm -fobj $*.asm
+    nasm -fobj $(AFLAGS) $(EXTRA_AFLAGS) $*.asm
 
 mem.zip: dist
     makezip.bat

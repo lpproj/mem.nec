@@ -6,4 +6,7 @@ UPX       = upx --8086 --best
 COMPILER = watcom
 #COMPILER  = turbocpp
 
+EXTRA_CFLAGS = -DNEC98
+EXTRA_AFLAGS = -DNEC98
+
 !include "mkfiles\$(COMPILER).mak"

@@ -244,6 +244,64 @@ typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned long ulong;
 
+#if defined(NEC98)
+/*
+ * Check machine (IBM PC compatible or NEC PC-98x1 series)
+ */
+enum {
+    M_UNKNOWN = 0,
+    M_IBMPC,
+    M_NEC98,
+    M_FMR
+};
+static char machine_type = M_UNKNOWN;
+static char detect_machine(int fallback)
+{
+    uchar far *boot = MK_FP(0xffff, 0x0000);
+
+    machine_type = (char)fallback;
+    if (boot[0] == 0xea && boot[3] == 0x80 && boot[4] == 0xfd)
+        machine_type = M_NEC98;
+
+    return machine_type;
+}
+
+static int is_ibmpc(void)
+{
+    char m = machine_type;
+    if (!m) m = detect_machine(M_IBMPC);
+    return m == M_IBMPC;
+}
+static int is_nec98(void)
+{
+    char m = machine_type;
+    if (!m) m = detect_machine(M_IBMPC);
+    return m == M_NEC98;
+}
+static int is_fmr(void)
+{
+    char m = machine_type;
+    if (!m) m = detect_machine(M_IBMPC);
+    return m == M_FMR;
+}
+static unsigned biosmemory_machine(void)
+{
+    if (is_nec98()) {
+        return 128 * ((*(unsigned char far *)MK_FP(0, 0x0501) & 7) + 1);
+    }
+    else /* if (is_ibmpc()) */ {
+        return *(unsigned short far *)MK_FP(0x40, 0x13);    /* int 12h */
+    }
+}
+#else
+# define is_ibmpc()  (1)
+# define is_nec98()  (0)
+# define is_fmr()    (0)
+# define biosmemory_machine  biosmemory
+#endif
+
+
+
 #define FALSE 0
 #define TRUE  1
 
@@ -541,8 +599,9 @@ unsigned int last_conv_seg;
 
 void setup_globals(void)
 {
-    last_conv_seg = biosmemory() * CONV_PARA_PER_KB;
+    last_conv_seg = biosmemory_machine() * CONV_PARA_PER_KB;
 }
+
 
 /*
  * What xms_available() returns if XMS is available.
@@ -951,6 +1010,69 @@ static ulong check_e801(void)
 
 #endif
 
+#if defined(NEC98)
+/*
+ * wrapper functions for NEC PC-98
+ */
+unsigned check_8800_machine(void)
+{
+    unsigned rc;
+    if (is_nec98()) {
+        rc = 128U * *(uchar far *)MK_FP(0, 0x0401);
+    }
+    else /* if (is_ibmpc()) */
+    {
+        rc = check_8800();
+    }
+    return rc;
+    
+}
+ulong check_e801_machine(void)
+{
+    ulong rc;
+    if (is_nec98()) {
+        rc = 1024UL * 128 * (*(uchar far *)MK_FP(0, 0x0401)) + 
+            1024UL * 1024UL * (*(ushort far *)MK_FP(0, 0x0594));
+    }
+    else /* if (is_ibmpc()) */
+    {
+        rc = check_e801();
+    }
+    return rc;
+    
+}
+ulong cdecl check_e820_machine(struct e820map far *e820map, ulong counter)
+{
+    ulong rc;
+    if (is_nec98()) {
+        rc = 0;
+    }
+    else /* if (is_ibmpc()) */
+    {
+        rc = check_e820(e820map, counter);
+    }
+    return rc;
+}
+ulong cdecl get_ext_mem_size_machine(void)
+{
+   ulong rc;
+    if (is_nec98()) {
+        rc = check_8800_machine();
+    }
+    else /* if (is_ibmpc()) */
+    {
+        rc = get_ext_mem_size();
+    }
+    return rc;
+}
+
+#else
+# define check_8800_machine  check_8800
+# define check_e801_machine  check_e801
+# define check_e820_machine  check_e820
+# define get_ext_mem_size_machine  get_ext_mem_size
+#endif
+
 #define HMA_FREE_NOT_DOS 0x0000 /* DOS is not in HMA */
 #define HMA_FREE_UNKNOWN 0xFFFF /* DOS doesn't support querying free HMA */
 
@@ -1294,7 +1416,7 @@ static XMSINFO *check_xms(void)
 	ulong counter = 0;
 
 	do {
-	    counter = check_e820(&e820map, counter);
+	    counter = check_e820_machine(&e820map, counter);
 	    /* has to be system memory above 1 Meg. */
 	    if (e820map.type == 1 && e820map.baselow >= 1024*1024UL)
 		total += e820map.lenlow;
@@ -1307,15 +1429,19 @@ static XMSINFO *check_xms(void)
     }
 #endif
     if (total == 0)
-	total = check_e801();
+	total = check_e801_machine();
 #ifdef DEBUG
     if (dbgcpu)	{
 	printf("check_xms: total=%lu, check_8800\n", total);
     }
 #endif
     if (total == 0) {
-	total = check_8800();
+	total = check_8800_machine();
+#if defined(NEC98)
+	if (total == 0 && is_ibmpc())
+#else
 	if (total == 0)
+#endif
 	    /* Try the CMOS approach required by Alain from Ralf */
 	    if (*(uchar far *)MK_FP(0xF000, 0xFFFE) == 0xFC) { /*is_AT*/
 		outportb(0x70, 0x17);
@@ -1805,7 +1931,11 @@ static MINFO *make_mcb_list(unsigned *convmemfree)
     mlist->next->seg = mlist->size;
     mlist = mlist->next;
 
+#if defined(NEC98)
+    mlist->size = is_nec98() ? 0x20 : 0x30;
+#else
     mlist->size = 0x30;
+#endif
     mlist->type = MT_BDA;
     mlist->next = new_minfo();
     mlist->next->seg = mlist->seg + mlist->size;

@@ -226,7 +226,7 @@ static void show_hma_info(int show_hma_free)
 
 static void int_15_info(void)
 {
-    ulong result = get_ext_mem_size();
+    ulong result = get_ext_mem_size_machine();
 
     if (GET_EXT_MEM_SIZE_OK(result)) {
 	printf("%-36s", _(2,22,"Memory accessible using Int 15h"));
@@ -267,7 +267,7 @@ static void normal_list(unsigned memfree, UPPERINFO *upper, int show_hma_free,
 	printf("biosmemory\n");
     }
 #endif
-    memory=biosmemory();
+    memory=biosmemory_machine();
     memfree=round_seg_kb(memfree);
     memused=memory - memfree;
     printf("\n");
