@@ -80,6 +80,10 @@
 2.22:Memory accessible using Int 15h
 # FIXME: to be translated
 2.23:Memory is not accessible using Int 15h (code %02xh)\n
+# FIXME: to be translated
+2.24:Memory accessible using Int 1Fh
+# FIXME: to be translated
+2.25:Memory is not accessible using Int 1Fh (code %02xh)\n
 # block types
 3.0:
 3.1:libero

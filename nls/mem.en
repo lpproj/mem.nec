@@ -51,6 +51,8 @@
 2.21:HMA is not available as no XMS driver is loaded\n
 2.22:Memory accessible using Int 15h
 2.23:Memory is not accessible using Int 15h (code %02xh)\n
+2.24:Memory accessible using Int 1Fh
+2.25:Memory is not accessible using Int 1Fh (code %02xh)\n
 # block types
 3.0:
 3.1:free

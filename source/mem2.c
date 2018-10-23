@@ -229,11 +229,22 @@ static void int_15_info(void)
     ulong result = get_ext_mem_size_machine();
 
     if (GET_EXT_MEM_SIZE_OK(result)) {
+#if defined(NEC98)
+	if (is_nec98())
+		printf("%-36s", _(2,24,"Memory accessible using Int 1Fh"));
+	else
+#endif
 	printf("%-36s", _(2,22,"Memory accessible using Int 15h"));
 	convert("%5sK", round_kb(BYTES_PER_KB * GET_EXT_MEM_SIZE_VALUE(result)));
 	convert(_(1,3," (%7s bytes)\n"),
 		(ulong) GET_EXT_MEM_SIZE_VALUE(result) * BYTES_PER_KB);
     } else {
+#if defined(NEC98)
+	if (is_nec98())
+	    printf(_(2,25,"Memory is not accessible using Int 1Fh (code %02h)\n"),
+		   GET_EXT_MEM_SIZE_ERROR(result));
+	else
+#endif
 	printf(_(2,23,"Memory is not accessible using Int 15h (code %02h)\n"),
 	       GET_EXT_MEM_SIZE_ERROR(result));
     }
