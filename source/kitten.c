@@ -26,6 +26,11 @@
 
 #include "kitten.h"
 
+#if defined(DBCS)
+# include "mbcsstub.h"
+# define strchr  my_mbschr
+# define strrchr  my_mbsrchr
+#endif
 
 /* DB stuff */
 
@@ -427,7 +432,11 @@ char *processEscChars(char *line)
   if (line == NULL) return NULL;
 
   /* cycle through copying characters, except when a \ is encountered. */
+#if defined(DBCS)
+  while (*src != '\0')
+#else
   for ( ; *src != '\0'; src++, dst++)
+#endif
     {
       ch = *src;
 
@@ -493,6 +502,14 @@ char *processEscChars(char *line)
 	}
 
       *dst = ch;
+#if defined(DBCS)
+      {
+        int n = my_mblen_loose(src);
+        if (n > 1) dst[1] = src[1];
+        src += n;
+        dst += n;
+      }
+#endif
     }
 
   /* ensure '\0' terminated */

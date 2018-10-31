@@ -22,7 +22,7 @@ default: mem.exe
 !include "mkfiles\nls.mak"
 
 # MEMSUPT is set based on which compiler is selected in mkfiles\generic.mak
-MEM_OBJS=prf.obj kitten.obj $(MEMSUPT)
+MEM_OBJS=prf.obj kitten.obj $(MEMSUPT) $(DBCS_OBJS)
 
 mem.exe: mem.obj $(MEM_OBJS)
     $(CC) $(LFLAGS) mem.obj $(MEM_OBJS)
@@ -32,7 +32,7 @@ memdbg.exe: memdbg.obj $(MEM_OBJS)
     $(CC) $(LFLAGS) memdbg.obj $(MEM_OBJS)
 
 memdbg.obj: mem.c
-    $(CC) $(CFLAGS) -DDEBUG $(OBJOUT)memdbg.obj mem.c
+    $(CC) $(CFLAGS) -DDEBUG $(OBJOUT)memdbg.obj mem.c $(DBCS_OBJS)
 
 memtest.exe: memtest.obj
     $(CC) $(LFLAGS) $<

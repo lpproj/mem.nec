@@ -6,7 +6,8 @@ UPX       = upx --8086 --best
 COMPILER = watcom
 #COMPILER  = turbocpp
 
-EXTRA_CFLAGS = -DNEC98
-EXTRA_AFLAGS = -DNEC98
+EXTRA_CFLAGS = -DNEC98 -DDBCS
+EXTRA_AFLAGS = -DNEC98 -DDBCS
+DBCS_OBJS = mbcsstub.obj
 
 !include "mkfiles\$(COMPILER).mak"
