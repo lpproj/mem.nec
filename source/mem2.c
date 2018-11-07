@@ -1613,6 +1613,40 @@ int main(int argc, char *argv[])
 
     setup_globals();
 
+#if defined(NEC98)
+    if (getenv("LANG") == NULL)
+    {
+        union REGS regs;
+        struct SREGS sregs;
+        unsigned char ci[40];
+        const unsigned char far *dbc; /* DBCS lead-byte table */
+        unsigned ccode;
+        unsigned dosver;
+
+        regs.x.ax = 0x3000;
+        intdos(&regs, &regs);
+        dosver = ((unsigned)(regs.h.al) << 8) | regs.h.ah;
+        if (regs.h.al == 10) dosver = 0x030a;  /* OS/2 1.x as DOS 3.1 (to be safe) */
+        regs.x.si = sregs.ds = 0;
+        regs.x.ax = 0x6300;
+        intdosx(&regs, &regs, &sregs);
+        dbc = MK_FP(sregs.ds, regs.x.si);
+        /* workaround for some clones of DOS, which returns wrong pointer */
+        if (dbc && dbc[0] != 0 && dbc[1] == 0) dbc += 2;
+
+        regs.x.ax = 0x3800;
+        regs.x.bx = 0;
+        regs.x.dx = FP_OFF(ci);
+        sregs.ds = FP_SEG(ci);
+        intdosx(&regs, &regs, &sregs);
+        ccode = regs.x.bx;
+        if (ccode == 0) ccode = regs.h.al;
+        if (ccode == 81 && (dosver < 0x0314 || (dbc && dbc[0] >= 0x80))) {
+            putenv("LANG=JA");
+        }
+    }
+#endif
+
     /* avoid unused argument warning? */
     argc = argc;
 
