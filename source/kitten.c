@@ -24,6 +24,7 @@
 #include <string.h>			/* strchr */
 #include <fcntl.h>
 
+#include "mymalloc.h"
 #include "kitten.h"
 
 #if defined(DBCS)
