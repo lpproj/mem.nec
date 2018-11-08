@@ -263,6 +263,15 @@ static char detect_machine(int fallback)
     machine_type = (char)fallback;
     if (boot[0] == 0xea && boot[3] == 0x80 && boot[4] == 0xfd)
         machine_type = M_NEC98;
+    else {
+        /* workaround for some emulator(s) */
+        union REGS regs;
+        regs.x.ax = 0x0fff;
+        regs.h.bh = 0;
+        int86(0x10, &regs, &regs);
+        if (regs.h.ah == 0x0f)
+            machine_type = M_NEC98;
+    }
 
     return machine_type;
 }
