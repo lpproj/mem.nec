@@ -40,27 +40,43 @@ For more information, please refer to <http://unlicense.org/>
 static unsigned char dbcfield[16];
 static unsigned char my_mb_cur_max = 0;
 
-static unsigned char setup_dbcfield()
+static unsigned char dbcfield_default[] = { 0, 0 };
+static unsigned char dbcfield_cp932[] = { 0x81, 0x9f, 0xe0, 0xfc, 0, 0 };
+
+static char my_upr(char c)
+{
+	if (c >= 'a' && c <= 'z') return c - 'a' + 'A';
+	return c;
+}
+
+static unsigned char setup_dbcfield(void)
 {
 	unsigned char rc = 1;
-	union REGS r;
-	struct SREGS sr;
-	
-	r.x.si = sr.ds = 0;
-	r.x.ax = 0x6300;
-	intdosx(&r, &r, &sr);
-	if (r.x.si || sr.ds) {
-		unsigned char far *p = MK_FP(sr.ds, r.x.si);
+	unsigned char far *p = dbcfield_default;
+	char *lang = getenv("LANG");
+
+	if (lang && my_upr(*lang)=='J' && my_upr(lang[1])=='A') {
+		p = dbcfield_cp932;
+	}
+	else {
+		union REGS r;
+		struct SREGS sr;
+		r.x.si = sr.ds = 0;
+		r.x.ax = 0x6300;
+		intdosx(&r, &r, &sr);
+		if (r.x.si || sr.ds) {
+			p = MK_FP(sr.ds, r.x.si);
+			/* workaround for some clone DOSes (which returns wrong DBCStbl address) */
+			if (*p > 0 && *p <= 6 && p[1] == 0) p += 2;
+		}
+	}
+	if (*p != 0) {
 		unsigned i;
-		/* workaround for some clone DOSes (which returns wrong DBCStbl address) */
-		if (*p > 0 && *p <= 6 && p[1] == 0) p += 2;
-		if (*p != 0) {
-			rc = 2;		/* guess DBCS environment */
-			for(i=0; i < sizeof(dbcfield); i += 2) {
-				dbcfield[i] = p[i];
-				dbcfield[i+1] = p[i+1];
-				if (dbcfield[i] == 0) break;
-			}
+		rc = 2;		/* guess DBCS environment */
+		for(i=0; i < sizeof(dbcfield); i += 2) {
+			dbcfield[i] = p[i];
+			dbcfield[i+1] = p[i+1];
+			if (dbcfield[i] == 0) break;
 		}
 	}
 	else {
