@@ -353,6 +353,7 @@ static unsigned biosmemory_machine(void)
 #endif
 
 int num_lines = -1;
+unsigned dos_version;
 
 typedef struct device_header
 {
@@ -609,6 +610,14 @@ unsigned int last_conv_seg;
 
 void setup_globals(void)
 {
+    union REGS regs;
+
+    regs.x.ax = 0x3000;
+    intdos(&regs, &regs);
+    regs.x.bx = regs.x.ax;
+    regs.x.ax = 0x3306;
+    intdos(&regs, &regs);
+    dos_version = ((unsigned)(regs.h.bl) << 8) | regs.h.bh;
     last_conv_seg = biosmemory_machine() * CONV_PARA_PER_KB;
 }
 
@@ -1682,6 +1691,7 @@ static void search_vectors(MINFO *m)
 
 static void check_name(char *dest, const char far *src, size_t length)
 {
+    if (dos_version < 0x0400) src = "        ";
     dest[length] = '\0';
     while(length--) {
 	unsigned char ch = (unsigned char)*src++;
@@ -2086,6 +2096,9 @@ static DEVINFO *make_dev_list(MINFO *mlist)
     MINFO *mlistroot = mlist;
     MINFO *mchild;
     int found_in_child;
+    int is_dos3;
+
+    is_dos3 = (dos_version >= 0x030a && dos_version < 0x0400);
 
     dlist = dlistroot = xcalloc(1, sizeof(DEVINFO));
 
@@ -2126,9 +2139,16 @@ static DEVINFO *make_dev_list(MINFO *mlist)
 	}
 
     for	 (cur_dpb = *((DPB far *far*)dos_list_of_lists());
-	  FP_OFF(cur_dpb) != 0xFFFF; cur_dpb=cur_dpb->next_dpb)
+	  FP_OFF(cur_dpb) != 0xFFFF; /* cur_dpb=cur_dpb->next_dpb */)
 	{
-	for (dlist=dlistroot;dlist!=NULL && dlist->addr != cur_dpb->device_addr;
+	DPB far *next_dpb = cur_dpb->next_dpb;
+	DEVICE_HEADER far *device_addr = cur_dpb->device_addr;
+	if (is_dos3)
+	{
+	    next_dpb = *(DPB far * far *)((uchar far *)cur_dpb + 0x18);
+	    device_addr = *(DEVICE_HEADER far * far *)((uchar far *)cur_dpb + 0x12);
+	}
+	for (dlist=dlistroot;dlist!=NULL && dlist->addr != device_addr;
 		 dlist=dlist->next)
 	    ;
 
@@ -2140,6 +2160,7 @@ static DEVINFO *make_dev_list(MINFO *mlist)
 	    else
 		dlist->lastdrive=drive_num;
 	    }
+	cur_dpb = next_dpb;
 	}
 
     for (dlist=dlistroot;dlist!=NULL;dlist=dlist->next)
