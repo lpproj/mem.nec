@@ -1070,12 +1070,26 @@ void ps_list(void)
 /* function to obtain the number of lines on the screen...added by brian reifsnyder.  */
 static uchar get_font_info(void)
 {
+#if defined(NEC98)
+    uchar rows = 25;
+
+    if (is_nec98()) {
+        rows = *((uchar far *)MK_FP(0x60, 0x112));
+    }
+    else if (is_ibmpc()) {
+        rows = *((uchar far *)MK_FP(0x40, 0x84));
+        if (rows == 0 || rows == 0xff) rows = 25;
+        else ++rows;
+    }
+    return rows;
+#else
     uchar number_of_lines = *((uchar far *)MK_FP(0x40, 0x84));
     if (number_of_lines == 0)
 	number_of_lines = 25;
     else
 	number_of_lines++;
     return number_of_lines;
+#endif
 }
 
 int is_switch_char(char c)
