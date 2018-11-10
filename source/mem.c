@@ -1030,6 +1030,17 @@ static ulong check_e801(void)
 #endif
 
 #if defined(NEC98)
+static int dos_isatty(int fd)
+{
+  union REGS regs;
+
+  regs.x.ax = 0x4400;
+  regs.x.bx = fd;
+  intdos(&regs, &regs);
+
+  return regs.x.dx & 0x80;
+}
+
 /*
  * wrapper functions for NEC PC-98
  */

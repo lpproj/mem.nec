@@ -1727,7 +1727,13 @@ int main(int argc, char *argv[])
 
     upper=check_upper(make_mcb_list(&memfree));
 
+#if defined(NEC98)
+    if (flags & F_PAGE) {
+	if (dos_isatty(0) && dos_isatty(1)) num_lines=get_font_info();
+    }
+#else
     if (flags & F_PAGE)	  num_lines=get_font_info();
+#endif
 
 /*
  * FIXME: In MS-DOS, when /MODULE or /FREE are specified, nothing else
