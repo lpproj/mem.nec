@@ -62,6 +62,18 @@ extern int num_lines;
 static void do_printf(const char * fmt, va_list arg);
 int printf(const char * fmt, ...);
 
+#if defined(NEC98)
+static int dos_getch(void)
+{
+  union REGS regs;
+
+  regs.h.ah = 0x08;
+  intdos(&regs, &regs);
+
+  return (int)(unsigned)(regs.h.al);
+}
+#endif
+
 /* paging printf() function...added by brian reifsnyder */
 void put_console(int c)
 {
@@ -76,7 +88,11 @@ void put_console(int c)
       {
 	line_counter = 0;
 	printf(_(8,0,"\nPress <Enter> to continue or <Esc> to exit . . ."));
+#if defined(NEC98)
+	if (dos_getch() == 27)
+#else
 	if (bioskey(0) == 27)
+#endif
 	    exit(1);
 	line_counter = 0;
       }
