@@ -1538,6 +1538,14 @@ void show_help(opt_t *opts, int opt_count)
     char *help_str;
 
     printf(_(7, 0, "FreeDOS MEM version %s"), MEM_VERSION);
+#if defined(NEC98)
+    if (is_nec98()) printf(" (NEC98)");
+    else if (is_ibmpc()) printf(" (IBMPC)");
+    else if (is_fmr()) printf(" (FMR)");
+    else {
+        /* printf(" (unknown)"); */
+    }
+#endif
 #ifdef DEBUG
     printf(" DEBUG");
 #endif
