@@ -23,6 +23,7 @@
 #include <stdlib.h>			/* getenv  */
 #include <string.h>			/* strchr */
 #include <fcntl.h>
+#include <limits.h>
 
 #include "mymalloc.h"
 #include "kitten.h"
@@ -32,6 +33,33 @@
 # define strchr  my_mbschr
 # define strrchr  my_mbsrchr
 #endif
+
+#define CATREAD_BUFFER 1024
+
+#if defined(CATREAD_BUFFER) && ((CATREAD_BUFFER) < 0 || (CATREAD_BUFFER) >= INT_MAX)
+# undef CATREAD_BUFFER
+#endif
+#if !defined(CATREAD_BUFFER)
+# define CATREAD_BUFFER 0
+#endif
+#if (CATREAD_BUFFER == 1)
+# undef CATREAD_BUFFER
+# define CATREAD_BUFFER 512
+#endif
+
+#if CATREAD_BUFFER
+struct catfd_body {
+  int fd;
+  unsigned char *buf;
+  unsigned ibuf;
+  unsigned datalen;
+  unsigned bufmax;
+};
+typedef struct catfd_body *CATFD;
+#else
+typedef int CATFD;
+#endif
+
 
 /* DB stuff */
 
@@ -49,7 +77,7 @@ db_t *db_fetch (char *key);
 
 /* External functions */
 
-int get_line (int file, char *buffer, int size);
+int get_line (CATFD file, char *buffer, int size);
 
 
 /* Local prototypes */
@@ -147,6 +175,91 @@ void dos_close(int file)
 
 #endif
 #endif
+
+
+#if CATREAD_BUFFER
+static void *catfd_malloc(size_t n)
+{
+  void *p = malloc(n ? n : 1);
+  if (!p)
+    {
+      printf("FATAL: memory allocation failure!\n");
+      exit(1);
+    }
+  memset(p, 0, n);
+  return p;
+}
+
+CATFD  catfd_open(char *filename, int mode)
+{
+  struct catfd_body f;
+  CATFD rc;
+
+  memset(&f, 0, sizeof(f));
+  f.fd = open(filename, mode);
+  if (f.fd < 0) return NULL;
+  rc = catfd_malloc(sizeof(f));
+  f.bufmax = CATREAD_BUFFER;
+  f.buf = catfd_malloc(f.bufmax);
+  /* ibuf = buflen = 0 */
+  *rc = f;
+  return rc;
+}
+
+int catfd_read1(CATFD f)
+{
+  int n;
+  if (!f) return -1;
+  if (f->ibuf >= f->datalen)
+  {
+    f->ibuf = f->datalen = 0;
+    n = read(f->fd, f->buf, f->bufmax);
+    if (n <= 0) return n;
+    f->datalen = n;
+  }
+  n = (int)(unsigned)(f->buf[f->ibuf]);
+  f->ibuf++;
+  return n;
+}
+
+int catfd_read(CATFD f, void *buf, int len)
+{
+  int n;
+  char *b = buf;
+  if (!f) return -1;
+  for(n=0; n<len; ++n)
+    {
+      int c = catfd_read1(f);
+      if (c <= 0) break;
+      b[n] = (char)c;
+    }
+
+  return n;
+}
+
+int catfd_close(CATFD f)
+{
+  if (!f) return -1;
+  close(f->fd);
+  if (f->buf) free(f->buf);
+  free(f);
+
+  return 0;
+}
+
+# undef open
+# undef read
+# undef close
+# define open(n,m)  catfd_open(n,m)
+# define read(f,p,n) catfd_read(f,p,n)
+# define close(f) catfd_close(f)
+# define catfd_open_fail(f)  (!(f))
+# define catfd_open_success(f)  (!!(f))
+#else
+# define catfd_open_fail(f)  ((int)(f) == -1)
+# define catfd_open_success(f)  ((int)(f) != -1)
+#endif
+
 
 #ifndef NOCATS
 
@@ -322,7 +435,7 @@ kittenopen(char *name)
 int
 catread (char *catfile)
 {
-  int	file;				/* pointer to the catfile */
+  CATFD	file;				/* pointer to the catfile */
   char *key;				/* part of key-value for hash */
   char *value;				/* part of key-value for hash */
   char inBuffer[256];			/* the string read from the file */
@@ -332,7 +445,7 @@ catread (char *catfile)
   /*printf("catread %s\n",catfile); */
 
   file = open (catfile, O_RDONLY | O_TEXT);
-  if (file < 0)
+  if (catfd_open_fail(file))
     {
       /* Cannot open the file.	Return failure */
 	  /* printf("catread: cant read %s\n",catfile); */
@@ -522,7 +635,7 @@ char *processEscChars(char *line)
 
 
 int
-get_line (int file, char *str, int size)
+get_line (CATFD file, char *str, int size)
 {
   int success = 0;
 
