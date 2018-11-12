@@ -741,6 +741,7 @@ parm [ah] [dx] value [dx ax] modify [bx];
 
 ulong call_xms_driver_bx_ax(unsigned char ah, ushort dx);
 #pragma aux call_xms_driver_bx_ax = \
+    "mov bl, 0" \
     "call dword ptr [xms_drv]" \
 parm [ah] [dx] value [bx ax];
 
