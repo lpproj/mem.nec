@@ -201,9 +201,15 @@
     * convert now uses the DOS NLS API to use the local 1000s sep char
     * converted spaces to tabs in the sources, but not inside strings
 
+    MEM 1.11p1, 13 November 2018, sava
+    * suppprt both IBM PC compatible and NEC PC-9801/9821 series
+    * do not wait keybord input when the standard input and/or output is
+      redirected to a file
+    * add Japanese Messsage
+    * improve speed of loading the NLS message
 */
 
-#define MEM_VERSION "1.11"
+#define MEM_VERSION "1.11p1"
 
 /*  Be sure to compile with word alignment OFF !!! */
 #if defined(_MSC_VER)

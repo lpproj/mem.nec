@@ -1,0 +1,15 @@
+MEM 1.1 patchlevel 1
+====================
+
+source: https://github.com/lpproj/mem.nec/ (branch:nec98)
+
+changelog
+
+1.1p1 (2018-11-13)
+------------------
+
+* suppprt both IBM PC compatible and NEC PC-9801/9821 series
+* do not wait keybord input when the standard input and/or output is redirected to a file
+* add Japanese Messsage
+* improve speed of loading the NLS message
+
