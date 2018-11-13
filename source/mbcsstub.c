@@ -121,7 +121,7 @@ my_mblen(const void *p, int mbmax)
 }
 
 
-unsigned char *
+MYMBCS_CHAR *
 my_mbschr(const void *p, unsigned c)
 {
 	unsigned char *r = NULL;
@@ -135,11 +135,11 @@ my_mbschr(const void *p, unsigned c)
 		if (*s == '\0') break;
 		s += my_mblen_loose(s);
 	}
-	return r;
+	return (MYMBCS_CHAR *)r;
 }
 
 #if 0		/* not used in kitten.c */
-unsigned char *
+MYMBCS_CHAR *
 my_mbsrchr(const void *p, unsigned c)
 {
 	unsigned char *r = NULL;
@@ -152,7 +152,7 @@ my_mbsrchr(const void *p, unsigned c)
 		if (*s == '\0') break;
 		s += my_mblen_loose(s);
 	}
-	return r;
+	return (MYMBCS_CHAR *)r;
 }
 #endif
 
